@@ -6,51 +6,84 @@ let startTime = Date.now();
 const hitLineY = canvas.height - 80;
 const speed = 0.25;
 
-// 🎯 TAP
+// Configuración de precisión (TAP)
 const PERFECT = 10;
 const GOOD = 25;
 const MISS = 40;
 
-// 🎯 ventanas
+// Ventanas de entrada
 const INPUT_WINDOW = 400;
 const HOLD_WINDOW = 500;
 const RELEASE_MARGIN = 120;
+
+// Tolerancia para entrada simultánea (BOTH)
+const BOTH_WINDOW = 80;
+
+let keyTimes = {
+    f: 0,
+    j: 0
+};
 
 let feedback = "";
 let feedbackTimer = 0;
 
 let activeHold = null;
 
-// 🔥 NUEVO (delay de fin)
+let keys = {
+    f: false,
+    j: false
+};
+
 let gameEnded = false;
 let endTimer = 0;
 
+// ================= NOTAS =================
 let notes = [
     { type: "left", time: 1000, hit: false },
     { type: "right", time: 2000, hit: false },
+    { type: "both", time: 3000, hit: false },
 
-    {
-        type: "left",
-        time: 3000,
-        endTime: 7000,
-        hit: false,
-        started: false
-    }
+    { type: "left", time: 4000, endTime: 6000, hit: false, started: false },
+    { type: "right", time: 6000, endTime: 8000, hit: false, started: false },
+    { type: "both", time: 8000, endTime: 10000, hit: false, started: false }
 ];
 
 // ================= INPUT =================
 document.addEventListener("keydown", (e) => {
     let currentTime = Date.now() - startTime;
 
+    if (e.key === "f") {
+        keys.f = true;
+        keyTimes.f = currentTime;
+    }
+
+    if (e.key === "j") {
+        keys.j = true;
+        keyTimes.j = currentTime;
+    }
+
     let inputType = null;
-    if (e.key === "f") inputType = "left";
-    if (e.key === "j") inputType = "right";
+
+    if (keys.f && keys.j) {
+        let diff = Math.abs(keyTimes.f - keyTimes.j);
+
+        if (diff <= BOTH_WINDOW) {
+            inputType = "both";
+        } else {
+            inputType = e.key === "f" ? "left" : "right";
+        }
+    } else if (e.key === "f") {
+        inputType = "left";
+    } else if (e.key === "j") {
+        inputType = "right";
+    }
+
     if (!inputType) return;
 
     let note = getClosestNote(inputType, currentTime);
     if (!note) return;
 
-    // HOLD START
+    // HOLD
     if (note.endTime) {
         let diff = Math.abs(currentTime - note.time);
         if (diff > HOLD_WINDOW) return;
@@ -70,15 +103,32 @@ document.addEventListener("keydown", (e) => {
     if (result !== "miss") note.hit = true;
 });
 
+// Manejo de liberación de teclas (KEYUP)
 document.addEventListener("keyup", (e) => {
     let currentTime = Date.now() - startTime;
 
-    let inputType = null;
-    if (e.key === "f") inputType = "left";
-    if (e.key === "j") inputType = "right";
-    if (!inputType) return;
+    if (e.key === "f") keys.f = false;
+    if (e.key === "j") keys.j = false;
 
     if (!activeHold) return;
+
+    // Caso BOTH
+    if (activeHold.type === "both") {
+        if (!keys.f || !keys.j) {
+            if (currentTime < activeHold.endTime - RELEASE_MARGIN) {
+                fail(activeHold);
+            }
+        }
+        return;
+    }
+
+    // Caso normal
+    let inputType = null;
+
+    if (e.key === "f") inputType = "left";
+    if (e.key === "j") inputType = "right";
+
+    if (!inputType) return;
     if (activeHold.type !== inputType) return;
 
     if (currentTime < activeHold.endTime - RELEASE_MARGIN) {
@@ -147,8 +197,9 @@ function drawNotes(currentTime) {
         if (note.hit) return;
 
         let x = canvas.width / 2;
-        if (note.type === "left") x -= 100;
-        if (note.type === "right") x += 100;
+
+        if (note.type === "left") x -= 120;
+        if (note.type === "right") x += 120;
 
         let y = getNoteY(note, currentTime);
 
@@ -166,10 +217,11 @@ function drawNotes(currentTime) {
 
             ctx.fillStyle = "blue";
             ctx.fillRect(x - 20, endY - 20, 40, 40);
+
             return;
         }
 
-        ctx.fillStyle = "white";
+        ctx.fillStyle = note.type === "both" ? "pink" : "white";
         ctx.fillRect(x - 20, y - 20, 40, 40);
     });
 }
@@ -222,12 +274,11 @@ function gameLoop() {
         }
     });
 
-    // 🔥 FIN CON DELAY
     let allDone = notes.every(n => n.hit);
 
     if (allDone && !gameEnded) {
         gameEnded = true;
-        endTimer = 60; // ~1 segundo
+        endTimer = 60;
     }
 
     if (gameEnded) {
@@ -237,9 +288,7 @@ function gameLoop() {
 
         endTimer--;
 
-        if (endTimer <= 0) {
-            return;
-        }
+        if (endTimer <= 0) return;
     }
 
     requestAnimationFrame(gameLoop);
