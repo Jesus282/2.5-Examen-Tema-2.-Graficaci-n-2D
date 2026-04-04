@@ -1,0 +1,9 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    background-color: #111;
+    border: 2px solid #fff;
+    border-radius: 10px;
+}
