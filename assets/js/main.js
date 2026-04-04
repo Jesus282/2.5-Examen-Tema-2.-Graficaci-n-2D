@@ -14,9 +14,37 @@ let keys = {
     j: false
 };
 
+// ================= INPUT =================
 document.addEventListener("keydown", (e) => {
-    if (e.key === "f") keys.f = true;
-    if (e.key === "j") keys.j = true;
+    let currentTime = Date.now() - startTime;
+
+    let inputType = null;
+
+    if (e.key === "f") {
+        inputType = keys.j ? "both" : "left";
+        keys.f = true;
+    }
+
+    if (e.key === "j") {
+        inputType = keys.f ? "both" : "right";
+        keys.j = true;
+    }
+
+    if (!inputType) return;
+
+    // Buscar la nota más cercana del mismo tipo
+    let note = notes
+        .filter(n => !n.hit && n.type === inputType)
+        .sort((a, b) => Math.abs(a.time - currentTime) - Math.abs(b.time - currentTime))[0];
+
+    if (!note) return;
+
+    let result = checkHit(note, currentTime);
+
+    if (result !== "miss") {
+        console.log(result);
+        note.hit = true;
+    }
 });
 
 document.addEventListener("keyup", (e) => {
@@ -24,6 +52,7 @@ document.addEventListener("keyup", (e) => {
     if (e.key === "j") keys.j = false;
 });
 
+// ================= LÓGICA =================
 function checkHit(note, currentTime) {
     let diff = Math.abs(currentTime - note.time);
 
@@ -33,8 +62,11 @@ function checkHit(note, currentTime) {
     return "miss";
 }
 
+// ================= RENDER =================
 function drawNotes(currentTime) {
     notes.forEach(note => {
+        if (note.hit) return;
+
         let timeDiff = note.time - currentTime;
 
         let x = canvas.width / 2;
@@ -54,36 +86,36 @@ function drawNotes(currentTime) {
     });
 }
 
-function handleInput(currentTime) {
-    let inputType = null;
-
-    if (keys.f && keys.j) inputType = "both";
-    else if (keys.f) inputType = "left";
-    else if (keys.j) inputType = "right";
-
-    if (!inputType) return;
-
-    let note = notes.find(n => !n.hit);
-
-    if (!note) return;
-
-    if (note.type === inputType) {
-        let result = checkHit(note, currentTime);
-        console.log(result);
-
-        note.hit = true;
-    }
-}
-
+// ================= GAME LOOP =================
 function gameLoop() {
     let currentTime = Date.now() - startTime;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     drawNotes(currentTime);
-    handleInput(currentTime);
+
+    // Detectar misses automáticos
+    notes.forEach(note => {
+        if (!note.hit) {
+            let diff = currentTime - note.time;
+
+            if (diff > 200) {
+                note.hit = true;
+                console.log("miss");
+            }
+        }
+    });
+
+    // Verificar fin del juego
+    let allDone = notes.every(n => n.hit);
+
+    if (allDone) {
+        console.log("Juego terminado");
+        return;
+    }
 
     requestAnimationFrame(gameLoop);
 }
 
+// ================= START =================
 gameLoop();
