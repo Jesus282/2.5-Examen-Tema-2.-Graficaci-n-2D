@@ -1,7 +1,6 @@
 import { registerHit } from "./score_system.js";
-import { charts } from "./charts/index.js";
 
-export function createGame(canvas, chartName = "tutorial") {
+export function createGame(canvas, chartData) {
     const ctx = canvas.getContext("2d");
 
     let startTime = Date.now();
@@ -28,7 +27,7 @@ export function createGame(canvas, chartName = "tutorial") {
     let endTimer = 0;
 
     //CARGA DINÁMICA DEL CHART
-    let notes = structuredClone(charts[chartName]);
+    let notes = structuredClone(chartData);
 
     function getClosestNote(type, currentTime) {
         return notes
