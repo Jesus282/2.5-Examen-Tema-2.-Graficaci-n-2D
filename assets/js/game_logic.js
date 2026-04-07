@@ -1,4 +1,7 @@
-export function createGame(canvas) {
+import { registerHit } from "./score_system.js";
+import { charts } from "./charts/index.js";
+
+export function createGame(canvas, chartName = "tutorial") {
     const ctx = canvas.getContext("2d");
 
     let startTime = Date.now();
@@ -24,15 +27,8 @@ export function createGame(canvas) {
     let gameEnded = false;
     let endTimer = 0;
 
-    let notes = [
-        { type: "left", time: 1000, hit: false },
-        { type: "right", time: 2000, hit: false },
-        { type: "both", time: 3000, hit: false },
-
-        { type: "left", time: 4000, endTime: 6000, hit: false, started: false },
-        { type: "right", time: 6000, endTime: 8000, hit: false, started: false },
-        { type: "both", time: 8000, endTime: 10000, hit: false, started: false }
-    ];
+    //CARGA DINÁMICA DEL CHART
+    let notes = structuredClone(charts[chartName]);
 
     function getClosestNote(type, currentTime) {
         return notes
@@ -70,7 +66,9 @@ export function createGame(canvas) {
     function fail(note) {
         note.hit = true;
         activeHold = null;
+
         showFeedback("miss");
+        registerHit("miss");
     }
 
     function showFeedback(text) {
@@ -112,6 +110,8 @@ export function createGame(canvas) {
         let result = judge(y);
 
         showFeedback(result);
+        registerHit(result);
+
         if (result !== "miss") note.hit = true;
     }
 
@@ -162,6 +162,7 @@ export function createGame(canvas) {
                     let result = judge(endY);
 
                     showFeedback(result);
+                    registerHit(result);
 
                     note.hit = true;
                     activeHold = null;

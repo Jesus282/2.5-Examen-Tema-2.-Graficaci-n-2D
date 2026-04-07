@@ -1,3 +1,5 @@
+import { score, combo, getFinalResult } from "./score_system.js";
+
 export function draw(game, canvas, currentTime) {
     const ctx = game.ctx;
 
@@ -50,10 +52,20 @@ export function draw(game, canvas, currentTime) {
         game.tickFeedback();
     }
 
+    // 🔥 SCORE Y COMBO
+    ctx.fillStyle = "white";
+    ctx.font = "18px Arial";
+    ctx.fillText("Score: " + score, 20, 30);
+    ctx.fillText("Combo: " + combo, 20, 55);
+
     // End
     if (game.gameEndedRef()) {
         ctx.fillStyle = "white";
         ctx.font = "30px Arial";
         ctx.fillText("FIN DEL JUEGO", 180, 200);
+
+        // 🔥 RESULTADO FINAL
+        ctx.font = "20px Arial";
+        ctx.fillText(getFinalResult(), 180, 240);
     }
 }
