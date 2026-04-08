@@ -12,12 +12,11 @@ const startBtn = document.getElementById("startBtn");
 
 let game = null;
 
-// puente global
+// Puente global para el tiempo (necesario para input_system)
 window.startTimeRef = () => Time.startTime;
 
-window.handleKeyDown = (e, t, keys, keyTimes) => {
-    if (game) game.handleKeyDown(e, t, keys, keyTimes);
-};
+// 1. Eliminamos window.handleKeyDown porque ahora game_logic
+// procesará el buffer automáticamente dentro del update.
 
 window.handleKeyUp = (e, t, keys) => {
     if (game) game.handleKeyUp(e, t, keys);
@@ -25,7 +24,6 @@ window.handleKeyUp = (e, t, keys) => {
 
 Input.init();
 
-// iniciar juego con chart seleccionado
 startBtn.addEventListener("click", () => {
     const selected = selector.value;
     const song = songs[selected];
@@ -37,6 +35,9 @@ startBtn.addEventListener("click", () => {
     Time.startTime = Date.now();
     resetScore();
 
+    // Reiniciamos el buffer de input al empezar una canción nueva para evitar "fantasmas"
+    Input.inputBuffer = []; 
+
     game = createGame(canvas, song.chart);
 
     playSong(song.audio);
@@ -46,7 +47,10 @@ function gameLoop() {
     Time.update();
 
     if (game) {
-        game.update(Time.current);
+        // 2. PASAMOS EL BUFFER: Ahora le enviamos el inputBuffer de Input.js
+        // al update del juego para que pueda detectar los "BOTH".
+        game.update(Time.current, Input.inputBuffer);
+        
         draw(game, canvas, Time.current);
     }
 
