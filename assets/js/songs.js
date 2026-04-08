@@ -5,14 +5,14 @@ export const songs = {
     tutorial: {
         name: "Tutorial",
         chart: tutorialChart,
-        audio: "./audio/song1.m4a",
+        audio: "./audio/songtuto.mp3",
         offset: 0
     },
 
     song1: {
         name: "Song 1",
         chart: song1Chart,
-        audio: "../audio/song1.m4a",
+        audio: "./audio/song1.m4a",
         offset: 0
     }
 };
