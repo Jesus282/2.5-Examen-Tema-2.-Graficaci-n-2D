@@ -5,7 +5,7 @@ export const songs = {
     tutorial: {
         name: "Tutorial",
         chart: tutorialChart,
-        audio: "../audio/tutorial.mp3",
+        audio: "../audio/song1.m4a",
         offset: 0
     },
 
