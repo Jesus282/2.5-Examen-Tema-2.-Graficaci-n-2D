@@ -1,10 +1,11 @@
 import { Time } from "./time_system.js";
 import { Input } from "./input_system.js";
 import { createGame } from "./game_logic.js";
-import { draw } from "./renderer.js";
+import { draw, drawCountdown } from "./renderer.js";
 import { resetScore } from "./score_system.js";
 import { songs } from "./songs.js";
 import { playSong, stopSong } from "./audio_system.js";
+import { initSongSelector } from "./ui_song_selector.js";
 
 const canvas = document.getElementById("gameCanvas");
 const selector = document.getElementById("songSelector");
@@ -12,17 +13,21 @@ const startBtn = document.getElementById("startBtn");
 
 let game = null;
 
-// Puente global para el tiempo (necesario para input_system)
-window.startTimeRef = () => Time.startTime;
+// 🔥 COUNTDOWN STATE
+let countdownActive = false;
+let countdownStart = 0;
+let countdownDuration = 3500;
+let pendingSong = null;
 
-// 1. Eliminamos window.handleKeyDown porque ahora game_logic
-// procesará el buffer automáticamente dentro del update.
+// puente global
+window.startTimeRef = () => Time.startTime;
 
 window.handleKeyUp = (e, t, keys) => {
     if (game) game.handleKeyUp(e, t, keys);
 };
 
 Input.init();
+initSongSelector();
 
 startBtn.addEventListener("click", () => {
     const selected = selector.value;
@@ -32,26 +37,41 @@ startBtn.addEventListener("click", () => {
 
     stopSong();
 
-    Time.startTime = Date.now();
-    resetScore();
-
-    // Reiniciamos el buffer de input al empezar una canción nueva para evitar "fantasmas"
-    Input.inputBuffer = []; 
-
-    game = createGame(canvas, song.chart);
-
-    playSong(song.audio);
+    // 👇 iniciamos countdown en vez de juego
+    countdownActive = true;
+    countdownStart = Date.now();
+    pendingSong = song;
 });
 
 function gameLoop() {
     Time.update();
 
-    if (game) {
-        // 2. PASAMOS EL BUFFER: Ahora le enviamos el inputBuffer de Input.js
-        // al update del juego para que pueda detectar los "BOTH".
+    // 🧠 COUNTDOWN CONTROLADO AQUÍ
+    if (countdownActive) {
+        const elapsed = Date.now() - countdownStart;
+
+        drawCountdown(canvas, elapsed);
+
+        if (elapsed >= countdownDuration) {
+            countdownActive = false;
+
+            Time.startTime = Date.now();
+            resetScore();
+
+            Input.inputBuffer = [];
+
+            game = createGame(canvas, pendingSong.chart);
+
+            // pequeño delay opcional para sync
+            setTimeout(() => {
+                playSong(pendingSong.audio);
+            }, 100);
+        }
+
+    } 
+    else if (game) {
         game.update(Time.current, Input.inputBuffer);
-        
-        draw(game, canvas, Time.current);
+        draw(game, canvas, Time.current, Input.keys);
     }
 
     requestAnimationFrame(gameLoop);

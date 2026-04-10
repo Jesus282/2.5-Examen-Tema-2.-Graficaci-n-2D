@@ -1,9 +1,8 @@
 import { registerHit } from "./score_system.js";
+import { playTap, startHold, stopHold } from "./hit_sound_system.js";
 
 export function createGame(canvas, chartData) {
     const ctx = canvas.getContext("2d");
-
-    let startTime = Date.now();
 
     const hitLineY = canvas.height - 80;
     const speed = 0.25;
@@ -26,7 +25,6 @@ export function createGame(canvas, chartData) {
     let gameEnded = false;
     let endTimer = 0;
 
-    //CARGA DINÁMICA DEL CHART
     let notes = structuredClone(chartData);
 
     function getClosestNote(type, currentTime) {
@@ -64,6 +62,9 @@ export function createGame(canvas, chartData) {
 
     function fail(note) {
         note.hit = true;
+        note.hitTime = Date.now();
+
+        stopHold(); // 🔥 detener sonido si fallas hold
         activeHold = null;
 
         showFeedback("miss");
@@ -75,11 +76,10 @@ export function createGame(canvas, chartData) {
         feedbackTimer = 20;
     }
 
-    // NUEVO: Reemplaza a handleKeyDown original. Procesa el buffer acumulado.
     function processInputBuffer(inputBuffer, currentTime) {
         if (!inputBuffer || inputBuffer.length === 0) return;
 
-        // Limpiar el buffer para evitar ruido (teclas que no sean F o J)
+        // limpiar ruido
         for (let i = inputBuffer.length - 1; i >= 0; i--) {
             let keyData = inputBuffer[i].key || inputBuffer[i].code;
             if (keyData !== "KeyF" && keyData !== "KeyJ") {
@@ -97,49 +97,54 @@ export function createGame(canvas, chartData) {
             let inputType = null;
             let hitTime = currentTime;
 
-            // 1. Detección de BOTH en ventana de tiempo
+            // BOTH
             if (fInput && jInput) {
                 let diff = Math.abs(fInput.time - jInput.time);
-                
+
                 if (diff <= BOTH_WINDOW) {
                     inputType = "both";
-                    hitTime = Math.max(fInput.time, jInput.time); // Usa el tiempo de la última tecla
-                    
-                    // Eliminar ambos del buffer cuidadosamente (de mayor a menor índice)
-                    if (fIndex > jIndex) { inputBuffer.splice(fIndex, 1); inputBuffer.splice(jIndex, 1); }
-                    else { inputBuffer.splice(jIndex, 1); inputBuffer.splice(fIndex, 1); }
-                } else {
-                    // Si están muy separados, procesamos solo el más antiguo
-                    if (fInput.time < jInput.time) {
-                        inputType = "left"; hitTime = fInput.time; inputBuffer.splice(fIndex, 1);
+                    hitTime = Math.max(fInput.time, jInput.time);
+
+                    if (fIndex > jIndex) {
+                        inputBuffer.splice(fIndex, 1);
+                        inputBuffer.splice(jIndex, 1);
                     } else {
-                        inputType = "right"; hitTime = jInput.time; inputBuffer.splice(jIndex, 1);
+                        inputBuffer.splice(jIndex, 1);
+                        inputBuffer.splice(fIndex, 1);
+                    }
+                } else {
+                    if (fInput.time < jInput.time) {
+                        inputType = "left";
+                        hitTime = fInput.time;
+                        inputBuffer.splice(fIndex, 1);
+                    } else {
+                        inputType = "right";
+                        hitTime = jInput.time;
+                        inputBuffer.splice(jIndex, 1);
                     }
                 }
             } 
-            // 2. Detección individual esperando la ventana del BOTH
             else if (fInput) {
                 if (currentTime - fInput.time > BOTH_WINDOW) {
-                    // Ya pasó el tiempo de ventana, es seguro registrar un "left" solo
-                    inputType = "left"; hitTime = fInput.time; inputBuffer.splice(fIndex, 1);
-                } else {
-                    break; // Cortamos el bucle para esperar al siguiente frame a ver si entra la J
-                }
-            } else if (jInput) {
+                    inputType = "left";
+                    hitTime = fInput.time;
+                    inputBuffer.splice(fIndex, 1);
+                } else break;
+            } 
+            else if (jInput) {
                 if (currentTime - jInput.time > BOTH_WINDOW) {
-                    // Ya pasó el tiempo de ventana, es seguro registrar un "right" solo
-                    inputType = "right"; hitTime = jInput.time; inputBuffer.splice(jIndex, 1);
-                } else {
-                    break; // Cortamos el bucle para esperar al siguiente frame a ver si entra la F
-                }
+                    inputType = "right";
+                    hitTime = jInput.time;
+                    inputBuffer.splice(jIndex, 1);
+                } else break;
             }
 
             if (!inputType) continue;
 
-            // --- SE MANTIENE TU LÓGICA DE GOLPE EXACTAMENTE IGUAL ---
             let note = getClosestNote(inputType, hitTime);
             if (!note) continue;
 
+            // 🎵 HOLD START
             if (note.endTime) {
                 let diff = Math.abs(hitTime - note.time);
                 if (diff > HOLD_WINDOW) continue;
@@ -147,17 +152,25 @@ export function createGame(canvas, chartData) {
                 note.started = true;
                 activeHold = note;
 
+                startHold(); // 🔥 sonido fssshhh
+
                 showFeedback("start");
                 continue;
             }
 
+            // 🎵 TAP
             let y = getNoteY(note, hitTime);
             let result = judge(y);
 
             showFeedback(result);
             registerHit(result);
 
-            if (result !== "miss") note.hit = true;
+            if (result !== "miss") {
+                note.hit = true;
+                note.hitTime = Date.now();
+
+                playTap(); // 🔥 sonido tap
+            }
         }
     }
 
@@ -174,7 +187,6 @@ export function createGame(canvas, chartData) {
         }
 
         let inputType = null;
-        // Actualizado a e.code por consistencia, pero soportando fallback a e.key
         if (e.code === "KeyF" || e.key === "f") inputType = "left";
         if (e.code === "KeyJ" || e.key === "j") inputType = "right";
 
@@ -186,9 +198,7 @@ export function createGame(canvas, chartData) {
         }
     }
 
-    // Modificamos el update para que reciba el buffer de inputs
     function update(currentTime, inputBuffer = []) {
-        // Ejecutamos el procesador de buffer aquí
         processInputBuffer(inputBuffer, currentTime);
 
         notes.forEach(note => {
@@ -216,6 +226,9 @@ export function createGame(canvas, chartData) {
                     registerHit(result);
 
                     note.hit = true;
+                    note.hitTime = Date.now();
+
+                    stopHold(); // 🔥 detener sonido
                     activeHold = null;
                 }
             }
@@ -235,7 +248,7 @@ export function createGame(canvas, chartData) {
 
     return {
         update,
-        processInputBuffer, // Renombrado de handleKeyDown para reflejar su nueva función
+        processInputBuffer,
         handleKeyUp,
         getNoteY,
         getNoteEndY,

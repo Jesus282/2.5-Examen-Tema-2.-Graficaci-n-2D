@@ -21,17 +21,42 @@
     <!-- 🌑 SIDEBAR -->
     <div class="col-md-3 sidebar d-flex flex-column p-4">
 
-      <!-- 🎀 TÍTULO -->
       <h2 class="title">🎵 Dual Beat Idol</h2>
-      <p class="subtitle">✨Temporal</p>
+      <p class="subtitle">✨ Shadow Rhythm</p>
 
-      <!-- 🎧 SELECTOR -->
+      <!-- 🎴 SELECTOR CON CARDS -->
       <label class="mt-3">Selecciona canción</label>
-      <select id="songSelector" class="form-select custom-select mt-2">
-          <option value="tutorial">Tutorial</option>
-          <option value="song1">Song 1</option>
-          <option value="song2">Song 2</option>
-          <option value="song3">Song 3</option>
+
+      <div class="song-grid mt-3">
+
+        <div class="song-card active" data-song="tutorial">
+          <img src="./assets/img/tutorial.png">
+          <div class="overlay">Tutorial</div>
+        </div>
+
+        <div class="song-card" data-song="song1">
+          <img src="./assets/img/song1.jpg">
+          <div class="overlay">Song 1</div>
+        </div>
+
+        <div class="song-card" data-song="song2">
+          <img src="./assets/img/song2.jpg">
+          <div class="overlay">Song 2</div>
+        </div>
+
+        <div class="song-card" data-song="song3">
+          <img src="./assets/img/song3.jpg">
+          <div class="overlay">Song 3</div>
+        </div>
+
+      </div>
+
+      <!-- 🔒 SELECT OCULTO (NO TOCAR) -->
+      <select id="songSelector" hidden>
+        <option value="tutorial">Tutorial</option>
+        <option value="song1">Song 1</option>
+        <option value="song2">Song 2</option>
+        <option value="song3">Song 3</option>
       </select>
 
       <!-- 📜 INSTRUCCIONES -->
@@ -63,9 +88,7 @@
   </div>
 </div>
 
-<!-- SCRIPT DEL JUEGO -->
 <script type="module" src="./assets/js/main.js"></script>
 
 </body>
-
 </html>
