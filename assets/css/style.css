@@ -7,11 +7,35 @@ body {
     color: white;
 }
 
-/* 🌑 SIDEBAR */
+/* 🧱 CONTENEDOR PRINCIPAL */
+.main-container {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+
+/* 🌑 SIDEBAR REDISEÑADA */
 .sidebar {
+    width: 300px;
+    height: 100vh;
+    overflow-y: auto;
+    flex-shrink: 0;
+    z-index: 10;
+    transition: transform 0.3s ease;
     background: linear-gradient(180deg, #1a1325, #0d0b14);
     border-right: 2px solid #f6c453;
     box-shadow: 5px 0 20px rgba(0,0,0,0.5);
+}
+
+/* 🎮 ÁREA DEL JUEGO */
+.game-container {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: #0d0b14;
+    position: relative;
 }
 
 /* 🎀 TEXTOS */
@@ -42,7 +66,7 @@ canvas {
     border-radius: 12px;
     box-shadow: 0 0 30px rgba(246, 196, 83, 0.3);
 
-    /* 🔥 CRÍTICO PARA MÓVIL */
+    /* 🔥 MÓVIL */
     touch-action: none; 
     user-select: none;
     -webkit-tap-highlight-color: transparent;
@@ -66,7 +90,7 @@ canvas {
     box-shadow: 0 0 15px #ff4da6;
 }
 
-/* 🎴 GRID 2 COLUMNAS */
+/* 🎴 GRID */
 .song-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -121,6 +145,26 @@ canvas {
 }
 
 /* 📱 RESPONSIVE */
+@media (max-width: 768px) {
+    .sidebar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 80%;
+        transform: translateX(-100%);
+    }
+
+    .sidebar.active {
+        transform: translateX(0);
+    }
+
+    canvas {
+        width: 95vw;
+        height: auto;
+    }
+}
+
+/* 📱 EXTRA PEQUEÑO */
 @media (max-width: 600px) {
     .song-grid {
         grid-template-columns: 1fr;

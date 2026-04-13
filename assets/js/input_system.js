@@ -4,6 +4,25 @@ export const Input = {
     inputBuffer: [], 
 
     init() {
+        // --- UI MENU (🔥 NUEVO) ---
+        const sidebar = document.getElementById("sidebar");
+        const menuBtn = document.getElementById("menuToggle");
+        const startBtn = document.getElementById("startBtn");
+
+        if (menuBtn && sidebar) {
+            menuBtn.addEventListener("click", () => {
+                sidebar.classList.toggle("active");
+            });
+        }
+
+        if (startBtn && sidebar) {
+            startBtn.addEventListener("click", () => {
+                if (window.innerWidth <= 768) {
+                    sidebar.classList.remove("active");
+                }
+            });
+        }
+
         // --- TECLADO ---
         document.addEventListener("keydown", (e) => {
             if (e.repeat) return; 
@@ -63,7 +82,6 @@ export const Input = {
             this.inputBuffer.push({ code: "KeyJ", time: currentTime });
         }
 
-        // 🔥 IMPORTANTE: avisamos al game logic
         window.handleKeyDown({ code: code }, currentTime, this.keys, this.keyTimes);
     },
 
@@ -73,13 +91,10 @@ export const Input = {
         if (code === "KeyF") this.keys.f = false;
         if (code === "KeyJ") this.keys.j = false;
 
-        // 🔥 para holds y lógica de liberación
         window.handleKeyUp({ code: code }, currentTime, this.keys);
     },
 
     update() {
-        // 🧠 Aquí puedes procesar el buffer si quieres lógica más avanzada
-        // Ejemplo: limpiar inputs viejos
         this.inputBuffer = this.inputBuffer.filter(input => {
             return Date.now() - window.startTimeRef() - input.time < 200;
         });

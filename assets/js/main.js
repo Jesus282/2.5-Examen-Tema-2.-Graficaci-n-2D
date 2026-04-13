@@ -11,6 +11,9 @@ const canvas = document.getElementById("gameCanvas");
 const selector = document.getElementById("songSelector");
 const startBtn = document.getElementById("startBtn");
 
+// 🔥 UI refs (nuevo)
+const sidebar = document.getElementById("sidebar");
+
 let game = null;
 
 // 🔥 COUNTDOWN STATE
@@ -19,25 +22,42 @@ let countdownStart = 0;
 let countdownDuration = 3500;
 let pendingSong = null;
 
-// puente global
+// 🔥 puente global
 window.startTimeRef = () => Time.startTime;
 
 window.handleKeyUp = (e, t, keys) => {
     if (game) game.handleKeyUp(e, t, keys);
 };
 
+// (por si lo usas en el futuro 👀)
+window.handleKeyDown = () => {};
+
+// 🔧 INIT
 Input.init();
 initSongSelector();
 
+// 🎮 START BUTTON
 startBtn.addEventListener("click", () => {
     const selected = selector.value;
     const song = songs[selected];
 
     if (!song) return;
 
+    // 🛑 evitar spam de inicio
+    if (countdownActive) return;
+
     stopSong();
 
-    // 👇 iniciamos countdown en vez de juego
+    // 📱 cerrar sidebar en móvil (extra seguro)
+    if (window.innerWidth <= 768 && sidebar) {
+        sidebar.classList.remove("active");
+    }
+
+    // reset estado
+    game = null;
+    Input.inputBuffer = [];
+
+    // 👇 iniciar countdown
     countdownActive = true;
     countdownStart = Date.now();
     pendingSong = song;
@@ -46,7 +66,7 @@ startBtn.addEventListener("click", () => {
 function gameLoop() {
     Time.update();
 
-    // 🧠 COUNTDOWN CONTROLADO AQUÍ
+    // 🧠 COUNTDOWN
     if (countdownActive) {
         const elapsed = Date.now() - countdownStart;
 
@@ -62,13 +82,14 @@ function gameLoop() {
 
             game = createGame(canvas, pendingSong.chart);
 
-            // pequeño delay opcional para sync
+            // 🔥 sync audio (ligero delay)
             setTimeout(() => {
                 playSong(pendingSong.audio);
             }, 100);
         }
 
     } 
+    // 🎮 GAME LOOP
     else if (game) {
         game.update(Time.current, Input.inputBuffer);
         draw(game, canvas, Time.current, Input.keys);
