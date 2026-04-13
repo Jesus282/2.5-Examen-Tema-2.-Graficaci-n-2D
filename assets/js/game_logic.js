@@ -64,7 +64,7 @@ export function createGame(canvas, chartData) {
         note.hit = true;
         note.hitTime = Date.now();
 
-        stopHold(); // 🔥 detener sonido si fallas hold
+        stopHold();
         activeHold = null;
 
         showFeedback("miss");
@@ -76,20 +76,21 @@ export function createGame(canvas, chartData) {
         feedbackTimer = 20;
     }
 
+    // 🔥 BUFFER PROCESS (ACTUALIZADO A .code)
     function processInputBuffer(inputBuffer, currentTime) {
         if (!inputBuffer || inputBuffer.length === 0) return;
 
         // limpiar ruido
         for (let i = inputBuffer.length - 1; i >= 0; i--) {
-            let keyData = inputBuffer[i].key || inputBuffer[i].code;
+            let keyData = inputBuffer[i].code;
             if (keyData !== "KeyF" && keyData !== "KeyJ") {
                 inputBuffer.splice(i, 1);
             }
         }
 
         while (inputBuffer.length > 0) {
-            let fIndex = inputBuffer.findIndex(i => (i.key || i.code) === "KeyF");
-            let jIndex = inputBuffer.findIndex(i => (i.key || i.code) === "KeyJ");
+            let fIndex = inputBuffer.findIndex(i => i.code === "KeyF");
+            let jIndex = inputBuffer.findIndex(i => i.code === "KeyJ");
 
             let fInput = fIndex !== -1 ? inputBuffer[fIndex] : null;
             let jInput = jIndex !== -1 ? inputBuffer[jIndex] : null;
@@ -152,7 +153,7 @@ export function createGame(canvas, chartData) {
                 note.started = true;
                 activeHold = note;
 
-                startHold(); // 🔥 sonido fssshhh
+                startHold();
 
                 showFeedback("start");
                 continue;
@@ -169,7 +170,7 @@ export function createGame(canvas, chartData) {
                 note.hit = true;
                 note.hitTime = Date.now();
 
-                playTap(); // 🔥 sonido tap
+                playTap();
             }
         }
     }
@@ -187,8 +188,8 @@ export function createGame(canvas, chartData) {
         }
 
         let inputType = null;
-        if (e.code === "KeyF" || e.key === "f") inputType = "left";
-        if (e.code === "KeyJ" || e.key === "j") inputType = "right";
+        if (e.code === "KeyF") inputType = "left";
+        if (e.code === "KeyJ") inputType = "right";
 
         if (!inputType) return;
         if (activeHold.type !== inputType) return;
@@ -228,7 +229,7 @@ export function createGame(canvas, chartData) {
                     note.hit = true;
                     note.hitTime = Date.now();
 
-                    stopHold(); // 🔥 detener sonido
+                    stopHold();
                     activeHold = null;
                 }
             }

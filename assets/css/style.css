@@ -41,6 +41,13 @@ canvas {
     border: 2px solid #f6c453;
     border-radius: 12px;
     box-shadow: 0 0 30px rgba(246, 196, 83, 0.3);
+
+    /* 🔥 CRÍTICO PARA MÓVIL */
+    touch-action: none; 
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    max-width: 100%;
+    height: auto;
 }
 
 /* 🔘 BOTÓN */
@@ -111,4 +118,15 @@ canvas {
 .song-card.active {
     border: 2px solid #f6c453;
     box-shadow: 0 0 15px #f6c453;
+}
+
+/* 📱 RESPONSIVE */
+@media (max-width: 600px) {
+    .song-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+        padding: 10px;
+    }
 }
